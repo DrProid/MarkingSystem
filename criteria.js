@@ -134,7 +134,7 @@ function addGradingSection(prevDiv) {
     criteriaObjects.push(new GradingCriteria(prevDiv));
 }
 
-function recalculate(){
+function recalculate() {
     console.log('TODO: recalculate');
     console.log(criteriaObjects);
 }
@@ -155,7 +155,7 @@ class CriteriaGroup {
         this.topLine.className = 'topline';
         this.div.appendChild(this.topLine);
         this.grading = document.createElement("div");
-        this.grading.className = 'grading';
+        this.grading.className = 'grading-container';
         this.div.appendChild(this.grading);
         this.bottomLine = document.createElement("div");
         this.bottomLine.className = 'controls';
@@ -163,7 +163,7 @@ class CriteriaGroup {
 
         //add a delete group button
         this.deleteButton = makeRoundButton(this.topLine, "-", "rgb(255,0,0)", (e) => this.deleteGroup.call(this, e));
-        this.deleteButton.className = 'criteria-control '+this.deleteButton.className;
+        this.deleteButton.className = 'criteria-control ' + this.deleteButton.className;
         addToolTip(this.deleteButton, "Delete Group");
 
         //make an input box for the title
@@ -174,13 +174,13 @@ class CriteriaGroup {
         // this.inputBox.style.marginRight = '10vw' 
         this.topLine.appendChild(this.inputBox);
         this.inputBox.addEventListener('input', (e) => this.updateTitle.call(this, e));
-        
+
         //make a heading for the title
         this.heading = document.createElement("h2");
         this.heading.className = 'criteria-title';
         // this.heading.style.marginRight = '25vw';
         this.topLine.appendChild(this.heading);
-        
+
         //set the input box and heading to title if it exists
         try {
             this.title = criteriaSettings[this.keyname].title;
@@ -190,7 +190,7 @@ class CriteriaGroup {
         }
         this.inputBox.setAttribute("value", this.title);
         this.heading.innerHTML = this.title;
-        
+
         //add a grade section
         this.grade = document.createElement('h3');
         this.grade.className = 'criteria-grade';
@@ -198,7 +198,7 @@ class CriteriaGroup {
         // this.grade.style.width = '180px';
         // this.grade.style.marginRight = '20vw';
         this.topLine.appendChild(this.grade);
-        
+
         //add weighting section
         this.weightBox = document.createElement('input');
         this.weightBox.type = 'number';
@@ -208,7 +208,7 @@ class CriteriaGroup {
         this.weightBox.style.width = "100px"
         this.topLine.appendChild(this.weightBox);
         this.weightBox.addEventListener('input', (e) => this.updateWeight.call(this, e));
-        
+
         //add heading for weighting
         this.weight = document.createElement("h3");
         this.weight.className = 'criteria-weight';
@@ -220,18 +220,18 @@ class CriteriaGroup {
             this.weightvalue = 100;
         }
         this.weightBox.setAttribute("value", this.weightvalue);
-        this.weight.innerHTML = 'Weight: '+this.weightvalue + '%';
-        
+        this.weight.innerHTML = 'Weight: ' + this.weightvalue + '%';
+
         //add button for add criteria group
         this.addSubGroupButton = makeRoundButton(this.bottomLine, "+", "#11f29c", () => this.addSubGroup.call(this));
-        this.addSubGroupButton.className = 'control-group '+this.addSubGroupButton.className;
+        this.addSubGroupButton.className = 'control-group ' + this.addSubGroupButton.className;
         addToolTip(this.addSubGroupButton, "Add Nested Group");
         // this.addSubGroupButton.style.marginLeft = "50px";
         //add button for add subcriteria
-        this.addSubCriteriaButton = makeRoundButton(this.bottomLine, "v", "#f2be13", () => this.addAssess.call(this));
-        this.addSubCriteriaButton.className = 'control-marking '+this.addSubCriteriaButton.className;
+        this.addMarkingSection = makeRoundButton(this.bottomLine, "v", "#f2be13", () => this.addGrading.call(this));
+        this.addMarkingSection.className = 'control-marking ' + this.addMarkingSection.className;
         // this.addSubCriteriaButton.style.marginLeft = "130px";
-        addToolTip(this.addSubCriteriaButton, "Add Marking");
+        addToolTip(this.addMarkingSection, "Add Marking");
         this.setEdit(editMode);
     }
     setEdit(isEdit) {
@@ -242,7 +242,7 @@ class CriteriaGroup {
         this.weightBox.style.display = (isEdit ? "initial" : "none");
         this.deleteButton.style.display = (isEdit ? "initial" : "none");
         this.addSubGroupButton.style.display = (isEdit ? "initial" : "none");
-        this.addSubCriteriaButton.style.display = (isEdit ? "initial" : "none");
+        this.addMarkingSection.style.display = (isEdit ? "initial" : "none");
         this.div.style.borderStyle = (isEdit ? "dashed" : "none");
     }
     updateTitle(e) {
@@ -251,19 +251,37 @@ class CriteriaGroup {
     }
     updateWeight(e) {
         this.weightvalue = e.target.value;
-        this.weight.innerHTML = 'Weight: '+this.weightvalue + '%';
+        this.weight.innerHTML = 'Weight: ' + this.weightvalue + '%';
         //calculate the grade from weightings
-        this.grade.innerHTML = 'Grade: '+this.weightvalue/100;
+        console.log('TODO: actual weight and grade calculations');
+        this.grade.innerHTML = 'Grade: ' + this.weightvalue / 100;
     }
     deleteGroup() {
-        //TODO: remove from criteriaObjects
-        criteriaObjects.splice(criteriaObjects.indexOf(this),1)
+        //get a list of nested children
+        let groupsToDelete = [];
+        {
+            let nestedGroups = this.div.children; //because getElementsByClassName returns all nested and I only want immediate children
+            for (let i = 0; i < nestedGroups.length; i++) {
+                if (nestedGroups[i].className == 'criteriaGroup') groupsToDelete.push(nestedGroups[i].id);
+            }
+            let nestedGrading = this.div.getElementsByClassName('grading-container')[0].getElementsByClassName('grading');
+            for (let i = 0; i < nestedGrading.length; i++) {
+                groupsToDelete.push(nestedGrading[i].id);
+            }
+        }
+        //tell children to delete themselves
+        for (let i = 0; i < groupsToDelete.length; i++) {
+            for (let j = 0; j < criteriaObjects.length; j++) {
+                if (criteriaObjects[j].keyname == groupsToDelete[i]) criteriaObjects[j].deleteGroup();
+            }
+        }
+        criteriaObjects.splice(criteriaObjects.indexOf(this), 1);
         this.div.remove();
     }
     addSubGroup() {
         addCriteriaGroup(this.div);
     }
-    addAssess() {
+    addGrading() {
         addGradingSection(this.grading);
     }
 }
@@ -280,10 +298,13 @@ class GradingCriteria {
         // topLine.style.height = '100px';
         this.div.appendChild(this.topLine);
 
+        //store the keyname for future reference
+        this.keyname = this.div.id;
+
         //add a delete group button
         this.deleteButton = makeRoundButton(this.topLine, "-", "rgb(255,0,0)", (e) => this.deleteGroup.call(this, e));
         addToolTip(this.deleteButton, "Delete Group");
-        this.deleteButton.className = 'grading-control '+this.deleteButton.className;
+        this.deleteButton.className = 'grading-control ' + this.deleteButton.className;
 
         //make an input box for the title
         this.inputBox = document.createElement("input");
@@ -327,14 +348,14 @@ class GradingCriteria {
         this.scoreline = document.createElement("div");
         this.scoreline.className = 'grading-mark';
         this.div.appendChild(this.scoreline);
-        
+
         //add a reset button
         this.resetButton = makeRoundButton(this.scoreline, "reset", "rgb(255,0,0)", () => this.resetFields.call(this));
-        this.resetButton.className = 'mark-reset '+ this.resetButton.className;
-        
+        this.resetButton.className = 'mark-reset ' + this.resetButton.className;
+
         //add slider
         this.slider = makeSlider(this.scoreline, (e) => this.updateFields.call(this, e));
-        this.slider.className = 'mark-slider '+this.slider.className;
+        this.slider.className = 'mark-slider ' + this.slider.className;
         //make an input box for the grade
         this.gradeInput = document.createElement("input");
         this.gradeInput.setAttribute("type", "number");
@@ -350,7 +371,7 @@ class GradingCriteria {
         this.letterGrade.style.display = 'inline';
         this.letterGrade.style.marginLeft = '20px';
         this.scoreline.appendChild(this.letterGrade);
-        
+
 
         //add heading for weighting
         this.weight = document.createElement("h4");
@@ -363,7 +384,7 @@ class GradingCriteria {
             this.weightvalue = 100;
         }
         this.weightBox.setAttribute("value", this.weightvalue);
-        this.weight.innerHTML = 'Weight: '+this.weightvalue + '%';
+        this.weight.innerHTML = 'Weight: ' + this.weightvalue + '%';
 
         //comment section
         this.commentBox = document.createElement("textarea");
@@ -375,12 +396,12 @@ class GradingCriteria {
         this.setEdit(editMode);
     }
     setEdit(isEdit) {
-        this.heading.style.display = (!isEdit ? "inline-block" : "none");
-        this.weight.style.display = (!isEdit ? "inline" : "none");
-        this.inputBox.style.display = (isEdit ? "inline" : "none");
-        this.weightBox.style.display = (isEdit ? "inline" : "none");
-        this.deleteButton.style.display = (isEdit ? "inline" : "none");
-        this.resetButton.style.display = (!isEdit ? "inline" : "none");
+        this.heading.style.display = (!isEdit ? "initial" : "none");
+        this.weight.style.display = (!isEdit ? "initial" : "none");
+        this.inputBox.style.display = (isEdit ? "initial" : "none");
+        this.weightBox.style.display = (isEdit ? "initial" : "none");
+        this.deleteButton.style.display = (isEdit ? "initial" : "none");
+        this.resetButton.style.display = (!isEdit ? "initial" : "none");
     }
     updateTitle(e) {
         this.title = e.target.value;
@@ -391,9 +412,9 @@ class GradingCriteria {
         this.gradeInput.value = 50;
         this.slider.value = 50;
     }
-    updateWeight(){
+    updateWeight() {
         this.weightvalue = e.target.value;
-        this.weight.innerHTML = 'Weight: '+this.weightvalue + '%';
+        this.weight.innerHTML = 'Weight: ' + this.weightvalue + '%';
     }
     updateFields(e) {
         let newvalue = parseFloat(e.target.value);
@@ -418,7 +439,7 @@ class GradingCriteria {
         }
     }
     deleteGroup() {
-        criteriaObjects.splice(criteriaObjects.indexOf(this),1)
+        criteriaObjects.splice(criteriaObjects.indexOf(this), 1);
         this.div.remove();
     }
 }
@@ -438,11 +459,12 @@ function setEditMode() {
     // show or hide all the appropriate buttons
     for (key in toolbarButtonList) {
         if (toolbarButtonList[key].editModeOnly == true) {
-            toolbarButtonList[key].btn.style.display = (editMode ? "inline" : "none");
+            toolbarButtonList[key].btn.style.display = (editMode ? "initial" : "none");
         }
     }
     for (key in editCriteriaButtonList) {
-        editCriteriaButtonList[key].style.display = (editMode ? "inline" : "none");
+        //this is semi pointless because there is only one button stored in it, the rest are handled inside class objects
+        editCriteriaButtonList[key].style.display = (editMode ? "initial" : "none");
     }
 
     //toggle the edit modes of the criteriaGroups

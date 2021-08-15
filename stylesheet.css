@@ -56,7 +56,7 @@ textarea {
 .grid-container {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: 0.2fr 1.8fr 1fr;
+  /* grid-template-rows: 0.2fr 1.8fr 1fr; */
   gap: 0px 0px;
   grid-template-areas: "toolbar" "criteria" "summary";
 }
@@ -84,7 +84,7 @@ textarea {
   grid-template-columns: 1fr;
   /* grid-template-rows: 1fr auto 1fr; */
   gap: 0px 0px;
-  grid-template-areas: "topline" "grading" "controls";
+  grid-template-areas: "topline" "grading-container" "controls";
   justify-content: space-between;
   justify-items: stretch;
   align-items: start;
@@ -100,6 +100,10 @@ textarea {
   gap: 0px 0px;
   grid-auto-flow: row;
   grid-template-areas: "criteria-control criteria-title criteria-grade criteria-weight";
+}
+
+.grading-container {
+  grid-area: grading-container;
 }
 
 .criteria-control {
